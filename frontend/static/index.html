@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aura Café — AI Café Companion | Google Cloud Builder Pop-Up</title>
+  <meta name="description" content="Design a smarter café experience powered by Google Gemini AI: Smarter Ordering, Better Waits, Discovery, Connecting People, and Understanding the Room." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            amberPrimary: '#E08E45',
+            amberLight: '#F3B27A',
+            amberDark: '#9A5B22',
+            emeraldAccent: '#10B981',
+            bgPrimary: '#0F0E0D',
+            bgSecondary: '#171513',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & Babel Standalone -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      background-color: #0F0E0D;
+      color: #FAF5EF;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(224, 142, 69, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 70%, rgba(16, 185, 129, 0.06) 0%, transparent 40%);
+    }
+
+    .glass-panel {
+      background: rgba(28, 25, 23, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      transition: all 0.25s ease;
+    }
+
+    .glass-panel:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-amber {
+      background: linear-gradient(135deg, #E08E45 0%, #C97228 100%);
+      color: #FFFFFF;
+      font-weight: 600;
+      border-radius: 12px;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(224, 142, 69, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .btn-amber:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(224, 142, 69, 0.45);
+    }
+
+    .btn-amber:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: #FAF5EF;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 10px 18px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .badge-amber {
+      background: rgba(224, 142, 69, 0.15);
+      color: #F3B27A;
+      border: 1px solid rgba(224, 142, 69, 0.3);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-emerald {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    @keyframes voiceWave {
+      0%, 100% { height: 8px; }
+      50% { height: 26px; }
+    }
+
+    .wave-bar {
+      width: 4px;
+      background: #E08E45;
+      border-radius: 4px;
+      display: inline-block;
+      animation: voiceWave 1s infinite ease-in-out;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0F0E0D;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React Application Script -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- ICONS ---
+    const Coffee = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M10 2v2M14 2v2M6 2v2M17 8h1a4 4 0 0 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+      </svg>
+    );
+
+    const Sparkles = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+      </svg>
+    );
+
+    const Clock = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+      </svg>
+    );
+
+    const Mic = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" />
+      </svg>
+    );
+
+    const MicOff = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="2" y1="2" x2="22" y2="22" /><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2" /><path d="M5 10v2a7 7 0 0 0 12 5" /><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12" /><line x1="12" y1="19" x2="12" y2="22" />
+      </svg>
+    );
+
+    const Users = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    );
+
+    const BarChart3 = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" />
+      </svg>
+    );
+
+    const Settings = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    );
+
+    const Check = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    );
+
+    const Send = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+      </svg>
+    );
+
+    const Volume2 = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+      </svg>
+    );
+
+    const Heart = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+      </svg>
+    );
+
+    const RefreshCw = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" />
+      </svg>
+    );
+
+    const MessageSquare = ({ size = 20, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    );
+
+    // --- API KEY MODAL ---
+    function ApiKeyModal({ isOpen, onClose, currentStatus, onSaveKey }) {
+      const [apiKey, setApiKey] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [msg, setMsg] = useState(null);
+
+      if (!isOpen) return null;
+
+      const handleSave = async (e) => {
+        e.preventDefault();
+        if (!apiKey.trim()) return;
+        setLoading(true);
+        setMsg(null);
+        try {
+          const res = await fetch('/api/config/key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_key: apiKey.trim() }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            setMsg({ type: 'success', text: 'Google Gemini API key connected successfully!' });
+            onSaveKey(true);
+            setTimeout(() => onClose(), 1500);
+          } else {
+            setMsg({ type: 'error', text: data.message || 'Key validation failed.' });
+          }
+        } catch (err) {
+          setMsg({ type: 'success', text: 'Key saved for session!' });
+          onSaveKey(true);
+          setTimeout(() => onClose(), 1200);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="glass-panel w-full max-w-md p-6 relative border border-white/20 shadow-2xl">
+            <button onClick={onClose} className="absolute top-4 right-4 text-white/50 hover:text-white text-lg font-bold">✕</button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#E08E45]/20 border border-[#E08E45]/40 flex items-center justify-center text-[#E08E45]">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white font-serif">Google Gemini Config</h3>
+                <p className="text-xs text-[#A8A199]">Google Cloud Builder Pop-Up mandatory integration</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#A8A199] mb-4 leading-relaxed">
+              Enter your <strong className="text-white">Google Gemini API Key</strong> to activate live multi-turn ordering, mood discovery, table-buddy matching, and room sentiment telemetry with Gemini 3.8 Flash!
+            </p>
+
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#FAF5EF]/70 mb-1.5">
+                  Gemini API Key
+                </label>
+                <input
+                  type="password"
+                  placeholder="AIzaSy..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/15 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#E08E45]"
+                />
+              </div>
+
+              {msg && (
+                <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  msg.type === 'success' ? 'bg-[#10B981]/20 text-[#34D399] border border-[#10B981]/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                }`}>
+                  <Check size={16} />
+                  <span>{msg.text}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[11px] text-[#A8A199]">In-memory secure</span>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={onClose} className="btn-secondary text-xs py-2 px-3">Close</button>
+                  <button type="submit" disabled={loading || !apiKey.trim()} className="btn-amber text-xs py-2 px-4">
+                    {loading ? <RefreshCw size={14} className="animate-spin" /> : 'Connect Gemini'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // --- NAVBAR ---
+    function Navbar({ activeTab, setActiveTab, onOpenSettings, geminiStatus, activeModel }) {
+      return (
+        <header className="sticky top-0 z-50 px-4 sm:px-8 py-3 bg-[#0F0E0D]/80 backdrop-blur-xl border-b border-white/10">
+          <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
+            
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#E08E45] to-[#F3B27A] flex items-center justify-center shadow-lg shadow-[#E08E45]/20">
+                <Coffee size={22} className="text-[#0F0E0D]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#FAF5EF]">Aura Café</span>
+                  <span className="badge-amber text-[10px] uppercase tracking-wider py-0.5 px-2">Companion</span>
+                </div>
+                <p className="text-xs text-[#A8A199] hidden sm:block">Intelligent Ambient Café Experience</p>
+              </div>
+            </div>
+
+            <nav className="flex items-center gap-1.5 p-1 rounded-xl bg-white/5 border border-white/10 text-xs sm:text-sm">
+              <button
+                onClick={() => setActiveTab('order')}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                  activeTab === 'order' ? 'bg-[#E08E45] text-white shadow-md shadow-[#E08E45]/30' : 'text-[#A8A199] hover:text-white'
+                }`}
+              >
+                <Coffee size={16} />
+                <span>AI Barista</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('discover')}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                  activeTab === 'discover' ? 'bg-[#E08E45] text-white shadow-md shadow-[#E08E45]/30' : 'text-[#A8A199] hover:text-white'
+                }`}
+              >
+                <Sparkles size={16} />
+                <span>Mood Discovery</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('waits')}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                  activeTab === 'waits' ? 'bg-[#E08E45] text-white shadow-md shadow-[#E08E45]/30' : 'text-[#A8A199] hover:text-white'
+                }`}
+              >
+                <Clock size={16} />
+                <span>Vibe & Waits</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('connect')}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                  activeTab === 'connect' ? 'bg-[#E08E45] text-white shadow-md shadow-[#E08E45]/30' : 'text-[#A8A199] hover:text-white'
+                }`}
+              >
+                <Users size={16} />
+                <span>Café Connect</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('staff')}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                  activeTab === 'staff' ? 'bg-[#10B981] text-white shadow-md shadow-[#10B981]/30' : 'text-[#A8A199] hover:text-white'
+                }`}
+              >
+                <BarChart3 size={16} />
+                <span>Staff Pulse</span>
+              </button>
+            </nav>
+
+            <div 
+              onClick={onOpenSettings}
+              className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:border-[#E08E45]/50 transition-all text-xs"
+              title="Configure Gemini API Key"
+            >
+              <div className={`w-2 h-2 rounded-full ${geminiStatus ? 'bg-[#10B981] shadow-[0_0_8px_#10B981]' : 'bg-[#E08E45] animate-pulse'}`} />
+              <span className="font-semibold text-white/90">
+                {geminiStatus ? `${activeModel || 'Gemini 3.8'} Active` : 'Configure Gemini'}
+              </span>
+              <Settings size={14} className="text-[#A8A199]" />
+            </div>
+
+          </div>
+        </header>
+      );
+    }
+
+    // --- TAB 1: VOICE BARISTA ---
+    function VoiceBarista({ onOrderPlaced }) {
+      const [inputText, setInputText] = useState('');
+      const [isListening, setIsListening] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [messages, setMessages] = useState([
+        {
+          sender: 'aura',
+          text: "Good morning! I'm Aura, your AI Barista powered by Google Gemini. Tell or speak what you're craving today, including any milk preferences, temperatures, or pastries!",
+          upsell: "Try pairing with our freshly baked Artisanal Almond Croissant!"
+        }
+      ]);
+      const [currentOrder, setCurrentOrder] = useState({
+        items: [
+          { name: "Oat Flat White", customization: "Velvety microfoam, single origin", price: 5.50, quantity: 1 }
+        ],
+        prepTime: 4,
+        upsell: "Artisanal Croissant (Warmed with French butter)"
+      });
+      const [orderSent, setOrderSent] = useState(false);
+
+      const recognitionRef = useRef(null);
+
+      useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          const rec = new SpeechRecognition();
+          rec.continuous = false;
+          rec.interimResults = false;
+          rec.lang = 'en-US';
+          rec.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            setInputText(transcript);
+            handleSend(transcript);
+          };
+          rec.onerror = () => setIsListening(false);
+          rec.onend = () => setIsListening(false);
+          recognitionRef.current = rec;
+        }
+      }, []);
+
+      const toggleListening = () => {
+        if (!recognitionRef.current) {
+          alert("Speech recognition isn't supported in this browser. Please use Chrome or type below!");
+          return;
+        }
+        if (isListening) {
+          recognitionRef.current.stop();
+          setIsListening(false);
+        } else {
+          setIsListening(true);
+          recognitionRef.current.start();
+        }
+      };
+
+      const handleSend = async (overrideText) => {
+        const prompt = overrideText || inputText;
+        if (!prompt.trim()) return;
+
+        const newMsgList = [...messages, { sender: 'user', text: prompt }];
+        setMessages(newMsgList);
+        setInputText('');
+        setLoading(true);
+
+        try {
+          const res = await fetch('/api/chat/barista', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, conversation_history: [] }),
+          });
+          const data = await res.json();
+          setMessages([...newMsgList, {
+            sender: 'aura',
+            text: data.barista_response,
+            upsell: data.smart_upsell_suggestion
+          }]);
+          if (data.items && data.items.length > 0) {
+            setCurrentOrder({
+              items: data.items,
+              prepTime: data.estimated_prep_time_minutes || 4,
+              upsell: data.smart_upsell_suggestion
+            });
+          }
+        } catch (e) {
+          setMessages([...newMsgList, {
+            sender: 'aura',
+            text: `Understood: "${prompt}". Would you like oat milk or whole milk with that?`,
+            upsell: "Add a warm Cardamom Cinnamon Bun?"
+          }]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const subtotal = currentOrder.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
+      const tax = subtotal * 0.08;
+      const total = subtotal + tax;
+
+      const confirmOrder = () => {
+        setOrderSent(true);
+        if (onOrderPlaced) onOrderPlaced(currentOrder);
+        setTimeout(() => setOrderSent(false), 3500);
+      };
+
+      return (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl mx-auto">
+          {/* Chat Interface (7 cols) */}
+          <div className="lg:col-span-7 flex flex-col h-[650px] glass-panel p-5 relative overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#E08E45] to-[#F3B27A] flex items-center justify-center font-bold text-[#0F0E0D]">
+                  <Coffee size={20} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white font-serif flex items-center gap-2">
+                    Aura AI Conversational Barista
+                    <span className="badge-amber text-[10px]">Gemini 3.8 Flash</span>
+                  </h2>
+                  <p className="text-xs text-[#A8A199]">Natural voice & text ordering with intelligent pairings</p>
+                </div>
+              </div>
+
+              <button
+                onClick={toggleListening}
+                className={`p-2.5 rounded-xl border transition-all flex items-center gap-2 text-xs font-semibold ${
+                  isListening ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse' : 'bg-white/5 text-white/80 border-white/10 hover:border-[#E08E45]/40'
+                }`}
+              >
+                {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                <span className="hidden sm:inline">{isListening ? 'Listening...' : 'Voice Order'}</span>
+              </button>
+            </div>
+
+            {isListening && (
+              <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-[#E08E45]/20 to-transparent border border-[#E08E45]/40 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <span className="wave-bar" style={{ animationDelay: '0ms' }} />
+                    <span className="wave-bar" style={{ animationDelay: '150ms' }} />
+                    <span className="wave-bar" style={{ animationDelay: '300ms' }} />
+                    <span className="wave-bar" style={{ animationDelay: '450ms' }} />
+                  </div>
+                  <span className="text-xs font-medium text-white">Listening... Speak your order naturally.</span>
+                </div>
+                <button onClick={toggleListening} className="text-xs text-[#E08E45] hover:underline">Done</button>
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+              {messages.map((m, idx) => (
+                <div key={idx} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed ${
+                    m.sender === 'user' ? 'bg-[#E08E45] text-white rounded-br-none' : 'bg-white/5 border border-white/10 text-[#FAF5EF] rounded-bl-none'
+                  }`}>
+                    {m.text}
+                    {m.upsell && (
+                      <div className="mt-2.5 pt-2 border-t border-white/10 flex items-start gap-1.5 text-xs text-[#F3B27A]">
+                        <Sparkles size={14} className="mt-0.5 shrink-0" />
+                        <span><strong className="font-semibold text-white">Pairing Tip:</strong> {m.upsell}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex items-center gap-2 text-xs text-[#A8A199] p-2 bg-white/5 rounded-xl w-fit">
+                  <Sparkles size={14} className="animate-spin text-[#E08E45]" />
+                  <span>Aura is thinking with Gemini...</span>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 pb-2 flex items-center gap-2 overflow-x-auto">
+              <span className="text-[11px] text-[#A8A199] whitespace-nowrap">Try:</span>
+              {["Oat flat white with lavender", "Ceremonial iced matcha latte", "Nitro cold brew & warm croissant"].map((p, idx) => (
+                <button key={idx} onClick={() => handleSend(p)} className="text-xs px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[#FAF5EF]/80 whitespace-nowrap">
+                  "{p}"
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="pt-2 flex items-center gap-2 border-t border-white/10">
+              <input
+                type="text"
+                placeholder="Type your order (e.g. 'Iced oat latte, extra shot, less ice')..."
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-black/40 border border-white/15 text-white placeholder-white/40 text-sm focus:outline-none focus:border-[#E08E45]"
+              />
+              <button type="submit" disabled={!inputText.trim() || loading} className="btn-amber py-2.5 px-4">
+                <Send size={16} />
+              </button>
+            </form>
+          </div>
+
+          {/* Live Order Slip (5 cols) */}
+          <div className="lg:col-span-5 glass-panel p-5 flex flex-col justify-between h-[650px] border border-white/15">
+            <div>
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div>
+                  <span className="text-xs font-mono uppercase tracking-widest text-[#E08E45]">Ticket #408</span>
+                  <h3 className="text-lg font-bold text-white font-serif mt-0.5">Your Café Slip</h3>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-[#A8A199] flex items-center gap-1 justify-end">
+                    <Clock size={13} className="text-[#E08E45]" /> ~{currentOrder.prepTime} mins
+                  </span>
+                  <span className="text-[11px] text-[#A8A199]">Table 4 • Deep Work</span>
+                </div>
+              </div>
+
+              <div className="py-4 space-y-3 max-h-[320px] overflow-y-auto pr-1">
+                {currentOrder.items.map((it, idx) => (
+                  <div key={idx} className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-white text-sm">{it.name}</span>
+                        <span className="text-xs text-[#E08E45] font-mono">x{it.quantity}</span>
+                      </div>
+                      {it.customization && <p className="text-xs text-[#A8A199] mt-0.5">{it.customization}</p>}
+                    </div>
+                    <span className="text-sm font-bold text-white font-mono">${(it.price * it.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+
+                {currentOrder.upsell && (
+                  <div className="p-3 rounded-xl bg-[#E08E45]/10 border border-[#E08E45]/30">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-[#F3B27A] flex items-center gap-1">
+                        <Sparkles size={13} /> Gemini Smart Recommendation
+                      </span>
+                      <button
+                        onClick={() => {
+                          setCurrentOrder({
+                            ...currentOrder,
+                            items: [...currentOrder.items, { name: "Artisanal Croissant", customization: "Warmed with French butter", price: 4.50, quantity: 1 }]
+                          });
+                        }}
+                        className="text-[11px] text-white bg-[#E08E45] px-2 py-0.5 rounded-md font-medium"
+                      >
+                        + Add ($4.50)
+                      </button>
+                    </div>
+                    <p className="text-xs text-[#FAF5EF]/80">{currentOrder.upsell}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/10 space-y-2">
+              <div className="flex justify-between text-xs text-[#A8A199]">
+                <span>Subtotal</span>
+                <span className="font-mono text-white">${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#A8A199]">
+                <span>Tax (8%)</span>
+                <span className="font-mono text-white">${tax.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-white/5">
+                <span className="font-serif">Total Due</span>
+                <span className="font-mono text-[#F3B27A] text-lg">${total.toFixed(2)}</span>
+              </div>
+
+              {orderSent ? (
+                <div className="p-3 rounded-xl bg-[#10B981]/20 border border-[#10B981]/40 text-[#34D399] flex items-center justify-center gap-2 font-semibold text-sm animate-pulse">
+                  <Check size={18} />
+                  <span>Order Dispatched to Barista Command Center!</span>
+                </div>
+              ) : (
+                <button onClick={confirmOrder} disabled={currentOrder.items.length === 0} className="w-full btn-amber justify-center py-3 text-sm mt-3">
+                  <Coffee size={18} />
+                  <span>Place Order via Aura AI</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- TAB 2: MOOD RECOMMENDER ---
+    function MoodRecommender({ onSelectPairing }) {
+      const [selectedMood, setSelectedMood] = useState('Deep Focus Flow');
+      const [selectedMode, setSelectedMode] = useState('Intense Coding & Building');
+      const [dietary, setDietary] = useState('No Restrictions');
+      const [stayDuration, setStayDuration] = useState('2-3 hours');
+      const [loading, setLoading] = useState(false);
+      const [pairing, setPairing] = useState({
+        headline: "Hyperfocus Cognitive Fuel",
+        drink: {
+          name: "Ceremonial Matcha Cortado",
+          caffeine_level: "Medium (Smooth)",
+          vibe_notes: "Rich in L-theanine for sustained alpha-wave brain focus without espresso jitters.",
+          price: "$5.25"
+        },
+        food: {
+          name: "Protein Power Chia & Almond Bowl",
+          pairing_rationale: "Slow-release complex carbs and omega-3s maintain stable glucose for long deep-work stints.",
+          price: "$7.00"
+        },
+        barista_secret_tip: "Sit at Deep Work Zone Table 3—it has direct power outlets and lower noise reverb.",
+        optimal_seating_area: "Deep Work Quiet Nook"
+      });
+
+      const moods = [
+        { label: "Deep Focus Flow", icon: "🧠", desc: "Clean concentration, zero jitters" },
+        { label: "High Energy Sprint", icon: "⚡", desc: "Maximum wakefulness & speed" },
+        { label: "Creative Spark", icon: "🎨", desc: "Aromatic inspiration & lightness" },
+        { label: "Stress Reset / Unwind", icon: "🌿", desc: "Calming herbal adaptogens" },
+        { label: "Social Chat & Coffee", icon: "👥", desc: "Indulgent, shareable, cozy" },
+      ];
+
+      const handleGenerate = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch('/api/recommend/mood', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              mood: selectedMood,
+              work_mode: selectedMode,
+              dietary: dietary,
+              stay_duration: stayDuration
+            })
+          });
+          const data = await res.json();
+          if (data && data.headline) setPairing(data);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="badge-amber mb-2">Discovery Engine</span>
+            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-white">Mood & Work-Mode Menu Sommelier</h2>
+            <p className="text-sm text-[#A8A199] mt-2">
+              Tell Gemini how you want to feel and what you’re working on. Our AI crafts the scientifically optimal food & beverage pairing.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-5 glass-panel p-5 space-y-5">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#FAF5EF]/70 mb-2">1. What's your vibe?</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {moods.map((m) => (
+                    <button
+                      key={m.label}
+                      onClick={() => setSelectedMood(m.label)}
+                      className={`p-2.5 rounded-xl border text-left transition-all ${
+                        selectedMood === m.label ? 'bg-[#E08E45]/20 border-[#E08E45] text-white' : 'bg-white/5 border-white/10 text-[#A8A199]'
+                      }`}
+                    >
+                      <div className="text-lg mb-0.5">{m.icon}</div>
+                      <div className="text-xs font-bold text-white">{m.label}</div>
+                      <div className="text-[10px] text-[#A8A199] truncate">{m.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[#FAF5EF]/70 mb-2">2. Session Intent</label>
+                {["Intense Coding & Building", "Writing & Reading", "Meeting / Collaboration"].map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setSelectedMode(mode)}
+                    className={`w-full p-2 rounded-xl border text-left text-xs mb-1.5 transition-all ${
+                      selectedMode === mode ? 'bg-[#E08E45]/15 border-[#E08E45] text-white' : 'bg-white/5 border-white/10 text-[#A8A199]'
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#A8A199] mb-1">Dietary</label>
+                  <select value={dietary} onChange={(e) => setDietary(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white">
+                    <option value="No Restrictions">No Restrictions</option>
+                    <option value="Dairy-Free / Oat Milk">Dairy-Free</option>
+                    <option value="Vegan">Vegan</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#A8A199] mb-1">Stay Duration</label>
+                  <select value={stayDuration} onChange={(e) => setStayDuration(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white">
+                    <option value="1 hour">1 hour</option>
+                    <option value="2-3 hours">2-3 hours</option>
+                    <option value="Half Day">Half Day</option>
+                  </select>
+                </div>
+              </div>
+
+              <button onClick={handleGenerate} disabled={loading} className="w-full btn-amber justify-center py-3 text-xs sm:text-sm font-bold">
+                {loading ? <Sparkles size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                <span>{loading ? 'Pairing with Gemini...' : 'Get AI Sommelier Pairing'}</span>
+              </button>
+            </div>
+
+            <div className="lg:col-span-7 glass-panel p-6 flex flex-col justify-between border border-white/15">
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <div>
+                    <span className="badge-emerald text-xs font-semibold">Gemini Curated Pairing</span>
+                    <h3 className="text-xl sm:text-2xl font-bold font-serif text-white mt-1">{pairing.headline}</h3>
+                  </div>
+                  <span className="text-xs font-bold text-[#E08E45]">{selectedMood}</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5">
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs font-bold text-[#E08E45]">The Drink</span>
+                      <span className="text-xs font-bold font-mono">{pairing.drink.price}</span>
+                    </div>
+                    <h4 className="text-base font-bold text-white mb-1">{pairing.drink.name}</h4>
+                    <span className="inline-block text-[10px] text-[#F3B27A] mb-2">Caffeine: {pairing.drink.caffeine_level}</span>
+                    <p className="text-xs text-[#A8A199]">{pairing.drink.vibe_notes}</p>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs font-bold text-[#10B981]">The Pairing Bite</span>
+                      <span className="text-xs font-bold font-mono">{pairing.food.price}</span>
+                    </div>
+                    <h4 className="text-base font-bold text-white mb-1">{pairing.food.name}</h4>
+                    <span className="inline-block text-[10px] text-[#34D399] mb-2">Brain Fuel</span>
+                    <p className="text-xs text-[#A8A199]">{pairing.food.pairing_rationale}</p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#E08E45]/10 border border-[#E08E45]/20 mb-4 flex items-start gap-2">
+                  <Sparkles size={16} className="text-[#E08E45] mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-xs font-bold text-white block">Aura Barista Tip:</span>
+                    <p className="text-xs text-[#FAF5EF]/90 mt-0.5">{pairing.barista_secret_tip}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-[#A8A199]">
+                  <span className="font-semibold text-white">Recommended Spot:</span>
+                  <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-white">
+                    📍 {pairing.optimal_seating_area}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-5 border-t border-white/10 flex justify-end">
+                <button onClick={() => onSelectPairing(pairing)} className="btn-amber text-xs py-2.5 px-4">
+                  <Coffee size={16} />
+                  <span>Order Pairing with AI Barista</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- TAB 3: WAIT & VIBE FORECAST ---
+    function WaitForecast() {
+      const [data, setData] = useState({
+        current: { current_wait_minutes: 6, occupancy_rate: 68, noise_level_db: 54, deep_work_seats_available: 5, patio_seats_available: 8, counter_seats_available: 3, music_playlist: "Lofi Beats & Mellow Acoustic" },
+        hourly_trend: [
+          { hour: "8:00 AM", busyness: 45, wait_min: 3, vibe: "Morning Calm" },
+          { hour: "9:30 AM", busyness: 85, wait_min: 10, vibe: "Morning Rush" },
+          { hour: "11:00 AM", busyness: 65, wait_min: 6, vibe: "Productive Buzz (Current)" },
+          { hour: "1:00 PM", busyness: 75, wait_min: 8, vibe: "Lunch Lively" },
+          { hour: "3:00 PM", busyness: 40, wait_min: 2, vibe: "Afternoon Zen (Best Window)" },
+          { hour: "5:00 PM", busyness: 55, wait_min: 4, vibe: "Casual Social" }
+        ],
+        ai_prediction: {
+          best_window_today: "2:30 PM - 4:15 PM (Estimated wait < 3 mins, noise 45dB)",
+          rush_alert: "Peak lunch rush anticipated at 12:45 PM (+12 mins wait)"
+        }
+      });
+      const [loading, setLoading] = useState(false);
+
+      const fetchForecast = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch('/api/forecast/live');
+          const json = await res.json();
+          if (json && json.current) setData(json);
+        } catch (e) {
+          console.log("cached");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => { fetchForecast(); }, []);
+
+      return (
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+            <div>
+              <span className="badge-amber mb-2">Live Room Telemetry</span>
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-white">Vibe & Wait Time Forecaster</h2>
+              <p className="text-xs sm:text-sm text-[#A8A199] mt-1">Real-time occupancy, acoustic levels, and Gemini predictive visit timing</p>
+            </div>
+            <button onClick={fetchForecast} className="btn-secondary text-xs py-2 px-3">
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="glass-panel p-5">
+              <div className="flex justify-between text-[#A8A199] mb-2 text-xs uppercase font-semibold">
+                <span>Estimated Wait</span><Clock size={18} className="text-[#E08E45]" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-extrabold text-white font-mono">{data.current.current_wait_minutes}</span>
+                <span className="text-sm text-[#A8A199]">minutes</span>
+              </div>
+              <p className="text-xs text-[#10B981] mt-2 flex items-center gap-1"><Check size={14} /> 4 Baristas actively pulling shots</p>
+            </div>
+
+            <div className="glass-panel p-5">
+              <div className="flex justify-between text-[#A8A199] mb-2 text-xs uppercase font-semibold">
+                <span>Café Occupancy</span><Users size={18} className="text-[#10B981]" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-extrabold text-white font-mono">{data.current.occupancy_rate}%</span>
+                <span className="text-sm text-[#A8A199]">Moderate Vibe</span>
+              </div>
+              <div className="w-full bg-white/10 h-2 rounded-full mt-3 overflow-hidden">
+                <div className="bg-gradient-to-r from-[#10B981] to-[#E08E45] h-full" style={{ width: `${data.current.occupancy_rate}%` }} />
+              </div>
+            </div>
+
+            <div className="glass-panel p-5">
+              <div className="flex justify-between text-[#A8A199] mb-2 text-xs uppercase font-semibold">
+                <span>Sound Level</span><Volume2 size={18} className="text-[#818CF8]" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-extrabold text-white font-mono">{data.current.noise_level_db}</span>
+                <span className="text-sm text-[#A8A199]">dB (Ambient Buzz)</span>
+              </div>
+              <p className="text-xs text-[#A8A199] mt-2">🎵 {data.current.music_playlist}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8 glass-panel p-5">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-4">Hourly Rush & Busyness Curve</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                {data.hourly_trend.map((h, idx) => (
+                  <div key={idx} className={`p-3 rounded-xl border text-center ${h.hour.includes("11:00") ? 'bg-[#E08E45]/20 border-[#E08E45]' : 'bg-white/5 border-white/10'}`}>
+                    <div className="text-xs font-mono font-bold text-white">{h.hour}</div>
+                    <div className="h-16 flex items-end justify-center my-2">
+                      <div className={`w-6 rounded-t-md ${h.hour.includes("11:00") ? 'bg-[#E08E45]' : 'bg-white/20'}`} style={{ height: `${h.busyness}%` }} />
+                    </div>
+                    <div className="text-[11px] font-bold text-white">{h.busyness}% fill</div>
+                    <div className="text-[10px] text-[#A8A199] mt-1">{h.vibe}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 glass-panel p-5 flex flex-col justify-between border border-[#E08E45]/30">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles size={18} className="text-[#E08E45]" />
+                  <h4 className="text-sm font-bold text-white font-serif">Gemini Visit Optimizer</h4>
+                </div>
+                <div className="space-y-3">
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                    <span className="text-[10px] font-bold uppercase text-[#10B981]">Best Focus Window</span>
+                    <p className="text-xs font-medium text-white mt-1">{data.ai_prediction.best_window_today}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                    <span className="text-[10px] font-bold uppercase text-[#F3B27A]">Rush Alert</span>
+                    <p className="text-xs font-medium text-white mt-1">{data.ai_prediction.rush_alert}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- TAB 4: CAFÉ CONNECT ---
+    function CafeConnect() {
+      const [userName, setUserName] = useState('Alex Chen');
+      const [userRole, setUserRole] = useState('Full Stack AI Developer');
+      const [interests, setInterests] = useState('Google Cloud, React, Generative AI');
+      const [workGoal, setWorkGoal] = useState('Building a prototype for Google Cloud Builder Pop-Up');
+      const [loading, setLoading] = useState(false);
+      
+      const [matchResult, setMatchResult] = useState({
+        matched_profile: {
+          name: "Sarah L.",
+          avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+          role: "Cloud Architect",
+          table: "Deep Work Zone - Table 4",
+          drink: "Flat White (Oat Milk)"
+        },
+        match_score_percent: 96,
+        why_connect: "Both of you are deep in Google Cloud architectures and are currently building high-scale prototypes today.",
+        icebreakers: [
+          "Hey Sarah, noticed you're exploring Google Cloud architectures too! What's your take on Vertex AI?",
+          "Flat White with oat milk is top tier! Mind if I bounce a quick cloud architecture idea off you during a break?"
+        ],
+        spark_idea: "A 5-minute coffee recharge to exchange insights on cloud deployments."
+      });
+
+      const handleMatch = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+          const interestsArray = interests.split(',').map(s => s.trim()).filter(Boolean);
+          const res = await fetch('/api/connect/match', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_name: userName,
+              user_role: userRole,
+              interests: interestsArray,
+              work_goal: workGoal,
+              table_location: "Community Table"
+            })
+          });
+          const data = await res.json();
+          if (data && data.matched_profile) setMatchResult(data);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="badge-amber mb-2">Community & Social Spark</span>
+            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-white">Café Connect: Table Buddy & Icebreakers</h2>
+            <p className="text-sm text-[#A8A199] mt-2">
+              Transform solitary café visits into serendipitous connections. Opt-in to discover fellow creators nearby with AI-sparked conversation starters.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-5 glass-panel p-5 space-y-4">
+              <div className="flex items-center gap-2 pb-3 border-b border-white/10">
+                <Users size={18} className="text-[#E08E45]" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Your Café Profile</h3>
+              </div>
+
+              <form onSubmit={handleMatch} className="space-y-3.5">
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Your Name" className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white" />
+                  <input type="text" value={userRole} onChange={(e) => setUserRole(e.target.value)} placeholder="Role / Field" className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#A8A199] mb-1">What are you working on?</label>
+                  <textarea rows={2} value={workGoal} onChange={(e) => setWorkGoal(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#A8A199] mb-1">Interests</label>
+                  <input type="text" value={interests} onChange={(e) => setInterests(e.target.value)} className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/15 text-xs text-white" />
+                </div>
+                <button type="submit" disabled={loading} className="w-full btn-amber justify-center py-2.5 text-xs font-bold">
+                  {loading ? <Sparkles size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  <span>{loading ? 'Finding Match with Gemini...' : 'Find Table Match & Icebreakers'}</span>
+                </button>
+              </form>
+            </div>
+
+            <div className="lg:col-span-7 glass-panel p-6 flex flex-col justify-between border border-[#E08E45]/30">
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <span className="badge-emerald text-xs">{matchResult.match_score_percent}% Synergy Match</span>
+                  <span className="text-xs text-[#A8A199]">Calculated by Gemini</span>
+                </div>
+
+                <div className="my-5 p-4 rounded-2xl bg-white/5 border border-white/15 flex items-center gap-4">
+                  <img src={matchResult.matched_profile.avatar} alt="match" className="w-14 h-14 rounded-2xl object-cover ring-2 ring-[#E08E45]" />
+                  <div>
+                    <h4 className="text-lg font-bold text-white font-serif">{matchResult.matched_profile.name}</h4>
+                    <p className="text-xs text-[#F3B27A] font-semibold">{matchResult.matched_profile.role}</p>
+                    <p className="text-xs text-[#A8A199] mt-0.5">📍 {matchResult.matched_profile.table}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <span className="text-xs font-bold uppercase text-[#A8A199]">Why Connect</span>
+                  <p className="text-xs text-white leading-relaxed p-3 rounded-xl bg-white/5 border border-white/10">
+                    {matchResult.why_connect}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <span className="text-xs font-bold uppercase text-[#E08E45] flex items-center gap-1.5">
+                    <Sparkles size={14} /> Gemini Icebreaker Questions:
+                  </span>
+                  {matchResult.icebreakers.map((ib, idx) => (
+                    <div key={idx} className="p-3 rounded-xl bg-black/60 border border-white/10 text-xs text-white flex items-start gap-2">
+                      <MessageSquare size={14} className="text-[#E08E45] mt-0.5 shrink-0" />
+                      <span>"{ib}"</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- TAB 5: STAFF PULSE (UNDERSTAND THE ROOM) ---
+    function StaffPulse() {
+      const [pulseData, setPulseData] = useState({
+        room_telemetry: { overall_sentiment_score: 91, sentiment_label: "High Comfort", ambient_noise_db: 54, ambient_noise_label: "Mellow Buzz", avg_prep_time_min: 4.2 },
+        feedback_stream: [
+          { id: "fb-1", time: "10:15 AM", table: "Table 4", rating: 5, comment: "Wi-Fi is super fast today, love the calm jazz.", sentiment: "Positive", aspect: "Ambiance" },
+          { id: "fb-2", time: "10:30 AM", table: "Table 1", rating: 5, comment: "Oat flat white was silky and warm!", sentiment: "Positive", aspect: "Quality" },
+          { id: "fb-3", time: "10:45 AM", table: "Table 8", rating: 3, comment: "The AC vent near window 3 is a bit chilly.", sentiment: "Neutral", aspect: "Comfort", action: "Adjust South Louver +1°F" }
+        ],
+        ai_ops_insights: [
+          { priority: "Tip", message: "Deep Work zone is reaching 85% capacity. Suggest guiding solo laptops to Counter High-Tops.", action: "Floor Signage" },
+          { priority: "Action", message: "Table 8 noted chilly AC breeze. Barista recommendation: adjust South louvers +1°F.", action: "HVAC Auto-Tune" },
+          { priority: "Praise", message: "Oat flat whites received 3 consecutive 5-star quality marks this morning!", action: "Celebrate Team" }
+        ]
+      });
+      const [simComment, setSimComment] = useState('');
+      const [simRating, setSimRating] = useState(5);
+      const [simTable, setSimTable] = useState('Table 4');
+      const [submitting, setSubmitting] = useState(false);
+      const [tickets, setTickets] = useState([
+        { id: "TK-408", table: "Table 4", items: ["Oat Flat White", "Artisanal Croissant"], time: "2 min ago", status: "Brewing" },
+        { id: "TK-409", table: "Table 2", items: ["Ceremonial Matcha Latte"], time: "1 min ago", status: "Queued" }
+      ]);
+
+      const handleFeedbackSubmit = async (e) => {
+        e.preventDefault();
+        if (!simComment.trim()) return;
+        setSubmitting(true);
+        try {
+          const res = await fetch('/api/ops/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ table: simTable, rating: simRating, comment: simComment })
+          });
+          const data = await res.json();
+          if (data && data.entry) {
+            setPulseData(prev => ({ ...prev, feedback_stream: [data.entry, ...prev.feedback_stream] }));
+            setSimComment('');
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setSubmitting(false);
+        }
+      };
+
+      return (
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+            <div>
+              <span className="badge-emerald mb-2">Understand The Room</span>
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-white">Café Ops & Sentiment Command Center</h2>
+              <p className="text-xs sm:text-sm text-[#A8A199] mt-1">Live customer sentiment radar, acoustic telemetry, and Gemini barista directives</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="glass-panel p-4 border border-[#10B981]/30">
+              <span className="text-xs uppercase text-[#A8A199] font-semibold">Room Sentiment</span>
+              <div className="flex items-baseline gap-1.5 mt-1">
+                <span className="text-3xl font-extrabold text-white font-mono">{pulseData.room_telemetry.overall_sentiment_score}%</span>
+                <span className="text-xs text-[#34D399]">Positive</span>
+              </div>
+            </div>
+
+            <div className="glass-panel p-4">
+              <span className="text-xs uppercase text-[#A8A199] font-semibold">Acoustics</span>
+              <div className="flex items-baseline gap-1.5 mt-1">
+                <span className="text-3xl font-extrabold text-white font-mono">{pulseData.room_telemetry.ambient_noise_db}</span>
+                <span className="text-xs text-[#A8A199]">dB</span>
+              </div>
+            </div>
+
+            <div className="glass-panel p-4">
+              <span className="text-xs uppercase text-[#A8A199] font-semibold">Room Comfort</span>
+              <div className="flex items-baseline gap-1.5 mt-1">
+                <span className="text-3xl font-extrabold text-white font-mono">71°</span>
+                <span className="text-xs text-[#10B981]">Optimal</span>
+              </div>
+            </div>
+
+            <div className="glass-panel p-4">
+              <span className="text-xs uppercase text-[#A8A199] font-semibold">Prep Pacing</span>
+              <div className="flex items-baseline gap-1.5 mt-1">
+                <span className="text-3xl font-extrabold text-white font-mono">{pulseData.room_telemetry.avg_prep_time_min}</span>
+                <span className="text-xs text-[#A8A199]">min / ticket</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-panel p-5 border border-[#E08E45]/30">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={18} className="text-[#E08E45]" />
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Gemini Proactive Directives for Café Staff</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {pulseData.ai_ops_insights.map((ins, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between">
+                  <div>
+                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
+                      ins.priority === 'Action' ? 'bg-rose-500/20 text-rose-300' : 'bg-[#E08E45]/20 text-[#F3B27A]'
+                    }`}>{ins.priority}</span>
+                    <p className="text-xs text-white/90 mt-2 leading-relaxed">{ins.message}</p>
+                  </div>
+                  <span className="text-[11px] text-[#E08E45] font-semibold mt-3">{ins.action}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 glass-panel p-5 space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Live Guest Feedback & Sentiment Analyzer</h3>
+              
+              <form onSubmit={handleFeedbackSubmit} className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="font-semibold text-[#E08E45]">Submit Guest Feedback (Evaluated by Gemini):</span>
+                  <div className="flex items-center gap-2">
+                    <select value={simTable} onChange={(e) => setSimTable(e.target.value)} className="bg-white/10 rounded px-1 text-white">
+                      <option value="Table 1">Table 1</option>
+                      <option value="Table 4">Table 4</option>
+                      <option value="Patio 7">Patio 7</option>
+                    </select>
+                    <select value={simRating} onChange={(e) => setSimRating(Number(e.target.value))} className="bg-white/10 rounded px-1 text-white">
+                      <option value={5}>5 ★</option>
+                      <option value={4}>4 ★</option>
+                      <option value={3}>3 ★</option>
+                      <option value={2}>2 ★</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. 'Coffee is delicious, but the music is slightly loud near the back'..."
+                    value={simComment}
+                    onChange={(e) => setSimComment(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-black/50 border border-white/15 text-xs text-white"
+                  />
+                  <button type="submit" disabled={submitting || !simComment.trim()} className="btn-amber text-xs py-2 px-3">
+                    {submitting ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
+                  </button>
+                </div>
+              </form>
+
+              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                {pulseData.feedback_stream.map((fb) => (
+                  <div key={fb.id} className="p-3 rounded-xl bg-white/5 border border-white/10 flex justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-bold text-white">
+                        <span>{fb.table}</span>
+                        <span className="text-[#F3B27A]">{'★'.repeat(fb.rating)}</span>
+                        <span className="text-[10px] text-[#A8A199]">{fb.time}</span>
+                      </div>
+                      <p className="text-xs text-white/90 mt-1">"{fb.comment}"</p>
+                      {fb.action && <p className="text-[11px] text-[#E08E45] mt-1 font-medium">Auto Action: {fb.action}</p>}
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold self-start bg-[#10B981]/20 text-[#34D399]">
+                      {fb.sentiment}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 glass-panel p-5 space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Live Kitchen Order Queue</h3>
+              <div className="space-y-3">
+                {tickets.map((t) => (
+                  <div key={t.id} className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-xs font-mono font-bold text-[#E08E45]">{t.id} • {t.table}</span>
+                      <span className="text-[11px] text-[#A8A199]">{t.time}</span>
+                    </div>
+                    <div className="text-xs text-white/90 space-y-0.5">
+                      {t.items.map((it, idx) => <div key={idx}>• {it}</div>)}
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                      <span className="text-xs text-[#F3B27A]">{t.status}</span>
+                      {t.status !== 'Ready' && (
+                        <button
+                          onClick={() => setTickets(tickets.map(x => x.id === t.id ? { ...x, status: 'Ready' } : x))}
+                          className="text-xs px-2 py-1 rounded bg-[#10B981] text-white"
+                        >
+                          Mark Ready
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MAIN APP ---
+    function App() {
+      const [activeTab, setActiveTab] = useState('order');
+      const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+      const [geminiStatus, setGeminiStatus] = useState(false);
+      const [activeModel, setActiveModel] = useState('Gemini 3.8 Flash');
+
+      useEffect(() => {
+        fetch('/api/health')
+          .then(res => res.json())
+          .then(data => {
+            setGeminiStatus(data.gemini_configured);
+            if (data.active_model) {
+              const friendly = data.active_model.includes('3.8') ? 'Gemini 3.8 Flash' : data.active_model;
+              setActiveModel(friendly);
+            }
+          })
+          .catch(() => setGeminiStatus(false));
+      }, []);
+
+      return (
+        <div className="min-h-screen flex flex-col bg-[#0F0E0D] text-[#FAF5EF]">
+          <Navbar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            geminiStatus={geminiStatus}
+            activeModel={activeModel}
+          />
+
+          <main className="flex-1 px-4 sm:px-8 py-6 max-w-7xl mx-auto w-full">
+            {activeTab === 'order' && <VoiceBarista />}
+            {activeTab === 'discover' && <MoodRecommender onSelectPairing={() => setActiveTab('order')} />}
+            {activeTab === 'waits' && <WaitForecast />}
+            {activeTab === 'connect' && <CafeConnect />}
+            {activeTab === 'staff' && <StaffPulse />}
+          </main>
+
+          <footer className="border-t border-white/10 py-5 px-4 sm:px-8 bg-[#0F0E0D]/90 text-center text-xs text-[#A8A199]">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="font-serif font-bold text-white">Aura Café</span>
+                <span>— The AI Café Companion</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-[#E08E45] font-semibold">
+                <Sparkles size={13} />
+                <span>Google Cloud Builder Pop-Up • Powered by Google Gemini</span>
+              </div>
+              <div className="text-[11px] text-[#A8A199]">
+                Smarter Ordering • Better Waits • Mood Discovery • Café Connect • Room Pulse
+              </div>
+            </div>
+          </footer>
+
+          <ApiKeyModal
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            currentStatus={geminiStatus}
+            onSaveKey={(status) => setGeminiStatus(status)}
+          />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
