@@ -73,8 +73,44 @@ backend_venv\Scripts\python.exe -m uvicorn backend.app:app --port 8000 --host 12
 Open **[http://127.0.0.1:8000/](http://127.0.0.1:8000/)** in Google Chrome or any modern browser.
 
 ### 2. Configure Your Google Gemini API Key
-You can configure your key in two easy ways:
-1. **In the Web App**: Click the **"Configure Gemini"** badge at the top right of the navbar and enter your key. It connects and validates instantly!
-2. **In `.env`**: Set `GEMINI_API_KEY=AIzaSy...` in `backend/.env`.
+You can configure your key in three easy ways:
+1. **Google Cloud Run Environment Variable**: Pass `--set-env-vars GEMINI_API_KEY="..."` during deployment.
+2. **In the Web App**: Click the **"Configure Gemini"** badge at the top right of the navbar and enter your key. It connects and validates instantly!
+3. **In `.env` (Local Dev)**: Set `GEMINI_API_KEY=your_key` in `backend/.env`.
 
-*(Note: The app includes intelligent demo simulation so all features can be presented seamlessly even if an API key is not yet set!)*
+*(Note: The app includes intelligent fallback demo simulation so all features can be presented seamlessly even if an API key is not yet set!)*
+
+---
+
+## ☁️ Deploying to Google Cloud Run
+
+The project includes a production-ready `Dockerfile` optimized for Google Cloud Run:
+- Automatically reads the `GEMINI_API_KEY` environment variable on container boot.
+- Dynamically binds to the Cloud Run assigned `$PORT` (default `8080`).
+- Serves both the FastAPI endpoints and the React single-page frontend from a single container.
+
+### Option A: One-Command Deployment via Google Cloud CLI
+
+Run from the root directory:
+
+```bash
+gcloud run deploy aura-cafe \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+```
+
+### Option B: Local Docker Build & Test
+
+```bash
+# 1. Build the container image
+docker build -t aura-cafe:latest .
+
+# 2. Run the container with GEMINI_API_KEY
+docker run -p 8080:8080 -e GEMINI_API_KEY="YOUR_GEMINI_API_KEY" aura-cafe:latest
+
+# 3. Test the deployment
+curl http://localhost:8080/api/health
+```
+Navigate to `http://localhost:8080` in your browser.

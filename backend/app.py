@@ -10,16 +10,16 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import requests
 
-# Load environment variables
+# Load environment variables (.env for local development; Cloud Run supplies via environment variables)
 load_dotenv()
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("aura-cafe")
 
 app = FastAPI(title="Aura Café Companion API - Powered by Google Gemini")
 
-# Allow CORS for local frontend dev server
+# Allow CORS for local frontend dev server and external Cloud Run clients
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,17 +28,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static frontend
-STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "static"))
-if os.path.exists(STATIC_DIR):
+# Serve static frontend (resolves paths cleanly both locally and inside container)
+STATIC_CANDIDATES = [
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "static")),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "static")),
+    os.path.abspath(os.path.join(os.getcwd(), "frontend", "static")),
+    os.path.abspath(os.path.join(os.getcwd(), "static")),
+]
+STATIC_DIR = next((p for p in STATIC_CANDIDATES if os.path.isdir(p) and os.path.exists(os.path.join(p, "index.html"))), None)
+
+if STATIC_DIR:
+    logger.info(f"Serving static frontend from: {STATIC_DIR}")
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
     @app.get("/")
     def serve_frontend_root():
         return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+else:
+    logger.warning("Frontend static directory not found in candidate paths.")
 
-
-# In-memory config and state
+# In-memory config and state - initialized directly from Cloud Run environment variable or .env
 CONFIG = {
     "gemini_api_key": os.getenv("GEMINI_API_KEY", "").strip(),
     "gemini_model": "gemini-3.8-flash"
@@ -154,14 +163,35 @@ def discover_and_validate_model(api_key: str) -> Optional[str]:
             continue
     return None
 
+def get_current_gemini_key() -> str:
+    """Returns active Gemini API key from CONFIG or Cloud Run GEMINI_API_KEY environment variable."""
+    return CONFIG.get("gemini_api_key") or os.getenv("GEMINI_API_KEY", "").strip()
+
+@app.on_event("startup")
+def startup_event():
+    key = get_current_gemini_key()
+    if key:
+        CONFIG["gemini_api_key"] = key
+        masked = f"{key[:4]}...{key[-4:]}" if len(key) > 8 else "***"
+        logger.info(f"Loaded GEMINI_API_KEY from environment: {masked}")
+        model = discover_and_validate_model(key)
+        if model:
+            CONFIG["gemini_model"] = model
+            logger.info(f"Connected to Google Gemini with model: {model}")
+        else:
+            logger.info(f"Using default model candidate: {CONFIG['gemini_model']}")
+    else:
+        logger.warning("No GEMINI_API_KEY detected in Cloud Run environment variables. Set GEMINI_API_KEY in Cloud Run or via the in-app modal.")
+
 # Helper to call Gemini API directly
 def call_gemini(prompt: str, system_instruction: Optional[str] = None, json_mode: bool = False) -> str:
-    api_key = CONFIG["gemini_api_key"]
+    api_key = get_current_gemini_key()
     if not api_key:
         raise HTTPException(
             status_code=400, 
-            detail="Gemini API Key is not set. Please set it in the top settings bar or in backend/.env"
+            detail="Gemini API Key is not set. Please set the GEMINI_API_KEY environment variable in Cloud Run or via the settings bar."
         )
+    CONFIG["gemini_api_key"] = api_key
     
     # Try current configured model first, then auto-discover if 404
     active_model = CONFIG.get("gemini_model") or "gemini-3.8-flash"
@@ -243,14 +273,14 @@ class FeedbackRequest(BaseModel):
     comment: str
 
 
-# Endpoints
 @app.get("/api/health")
 def get_health():
-    has_key = bool(CONFIG["gemini_api_key"])
+    current_key = get_current_gemini_key()
+    has_key = bool(current_key)
     return {
         "status": "online",
         "gemini_configured": has_key,
-        "masked_key": f"{CONFIG['gemini_api_key'][:4]}...{CONFIG['gemini_api_key'][-4:]}" if has_key and len(CONFIG['gemini_api_key']) > 8 else ("Set" if has_key else "Not Configured"),
+        "masked_key": f"{current_key[:4]}...{current_key[-4:]}" if has_key and len(current_key) > 8 else ("Set" if has_key else "Not Configured"),
         "active_model": CONFIG.get("gemini_model", "Auto-Detect"),
         "cafe_state": CAFE_STATE
     }
@@ -610,4 +640,9 @@ def submit_room_feedback(req: FeedbackRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8080))
+    # Allow running from repository root or inside backend directory
+    try:
+        uvicorn.run("backend.app:app", host="0.0.0.0", port=port, reload=False)
+    except Exception:
+        uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
